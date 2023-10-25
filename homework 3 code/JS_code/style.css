@@ -1,0 +1,48 @@
+body {
+  background-color: rgb(255, 255, 255); /* Change background color to light blue */
+  color: darkslategray; /* Change text color to dark slate gray */
+  font-family: 'Open Sans', sans-serif;
+}
+
+.container p {
+  margin-top: 0;
+  width: 25%;
+  padding-bottom: 15px;
+  text-align: center;
+}
+
+label {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: bold;
+  color: navy; /* Change label text color to navy */
+}
+
+input {
+  width: 80%;
+  padding: 5px;
+  margin-bottom: 15px;
+  box-sizing: border-box;
+  background-color: lavender; /* Change input background color to lavender */
+  color: darkolivegreen; /* Change input text color to dark olive green */
+}
+
+.container {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.canvas-wrapper {
+  width: 100%;
+  padding-bottom: 30px;
+  text-align: center;
+}
+
+h1 {
+  text-align: center;
+  padding-bottom: 5%;
+}
+
+#myCanvas, #myCanvas2 {
+  padding-top: 30px;
+}
