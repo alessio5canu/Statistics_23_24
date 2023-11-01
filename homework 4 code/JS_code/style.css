@@ -1,0 +1,47 @@
+body {
+  background-color: rgb(255, 255, 255); /* Change background color to light blue */
+  color: darkslategray; /* Change text color to dark slate gray */
+  font-family: 'Open Sans', sans-serif;
+  text-align: center;
+}
+
+.textBoxClass{
+  margin-top: 0;
+  width: 10%;
+  text-align: center;
+}
+
+label {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: bold;
+  color: navy; /* Change label text color to navy */
+}
+
+h1 {
+  padding-bottom: 5%;
+}
+
+button {
+  background-color: rgba(0, 33, 251, 0.495);
+  border-radius: 5px;
+  border: none;
+}
+
+#inputContainer {
+  width: 30%;
+  padding: 10px;
+}
+
+#tableContainer {
+  width: 70%; 
+  padding: 10px;
+}
+
+#inputContainer label,
+#inputContainer input,
+#inputContainer button {
+  display: block;
+  margin-bottom: 10px;
+  width: 50%;
+}

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homework 4 JS</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <h1>Homework 4 JS Table</h1>
+    <div id="inputContainer">
+        <label for="textBox1">Number of Variables:</label>
+        <input type="text" class="textBoxClass" id="textBox1">
+        <button id="buttonLoad" onclick="formLoad()">Create</button>
+    </div>
+    <div id="tableContainer">
+        <table id="dataTable" border="1"></table>
+    </div>
+    
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+        const labels = [];
+        const intervals = [];
+        const variables = [];
+        let generateButton;
+
+        const numberOfValues = 100;
+
+        function initialize() {
+            const textBox1 = document.getElementById("textBox1");
+            textBox1.value = "2";
+            textBox1.className="textBoxClass";
+        }
+
+        function formLoad() {
+            const n = parseInt(document.getElementById("textBox1").value);
+            removeExcessControls();
+            generateVariables(n);
+        }
+
+        window.formLoad = formLoad;
+
+        function generateVariables(n) {
+            var inputCont = document.body.querySelector("#inputContainer");
+
+            if (generateButton) {
+            generateButton.remove();
+            generateButton = null;
+            }
+
+            for (let i = 0; i < n; i++) {
+            console.log("Variable " + (i + 1) + ":");
+
+            const values = new Array(numberOfValues);
+
+            const label = document.createElement("label");
+            label.innerText = "Variable n." + (i + 1) + ":";
+            inputCont.appendChild(label);
+            labels.push(label);
+
+            const textBox = document.createElement("input");
+            textBox.name = "textBoxInterval" + (i + 1);
+            textBox.className="textBoxClass";
+            inputCont.appendChild(textBox);
+            intervals.push(textBox);
+
+            for (let j = 0; j < numberOfValues; j++) {
+                const randomValue = Math.random();
+                console.log("Value " + (j + 1) + ": " + randomValue);
+                values[j] = randomValue;
+            }
+            variables.push(values);
+            }
+
+            generateButton = document.createElement("button");
+            generateButton.innerText = "Generate";
+            generateButton.addEventListener("click", cumulativeFrequencyClick);
+            inputCont.appendChild(generateButton);
+        }
+
+        function cumulativeFrequencyClick() {
+            const cumulativeFrequency = {};
+
+            const intervalCounts = new Array(variables.length).fill(0);
+
+            intervals.forEach((interval, i) => {
+            const intervalValue = parseInt(interval.value);
+            if (!isNaN(intervalValue)) {
+                intervalCounts[i] = intervalValue;
+            } else {
+                intervalCounts[i] = 0;
+            }
+            });
+
+            variables.forEach((variable, i) => {
+            console.log("Variable n." + i + " Count values: " + variable.length);
+            const intervalsValues = [];
+            const max = Math.max(...variable);
+            const min = Math.min(...variable);
+            console.log("Max: " + max + " - Min: " + min);
+            const numIntervals = intervalCounts[i];
+            const intervalWidth = (max - min) / numIntervals;
+
+            const intervalHistogram = {};
+
+            for (let j = 0; j < numIntervals; j++) {
+                const intervalStart = min + j * intervalWidth;
+                const intervalEnd = intervalStart + intervalWidth;
+
+                if (j === numIntervals - 1) {
+                const count = variable.filter(value => value >= intervalStart && value <= max).length;
+                intervalHistogram[intervalStart] = count;
+                } else {
+                const count = variable.filter(value => value >= intervalStart && value < intervalEnd).length;
+                intervalHistogram[intervalStart] = count;
+                }
+            }
+
+            for (const key in intervalHistogram) {
+                console.log("Interval " + key + ": Count " + intervalHistogram[key]);
+            }
+            cumulativeFrequency[i] = intervalHistogram;
+            });
+
+            generateKJointDistribution(cumulativeFrequency);
+        }
+
+        function generateKJointDistribution(cumulativeFrequency) {
+            const table = document.getElementById("dataTable");
+            table.innerHTML = "";
+
+            const jointDistribution = [];
+            const variableIntervals = [];
+
+            let totalCombination = 0;
+            let totalFrequency = 1.0;
+            let percentageFrequency = 0;
+
+            for (const variableProbabilities of Object.values(cumulativeFrequency)) {
+            variableIntervals.push(Object.keys(variableProbabilities).map(Number));
+            }
+
+            const headerRow = table.insertRow();
+            for (let i = 0; i < variableIntervals.length; i++) {
+            const cell = headerRow.insertCell();
+            cell.innerText = "Variable n." + (i + 1);
+            }
+            const frequencyCell = headerRow.insertCell();
+            frequencyCell.innerText = "Frequency";
+
+            const indices = new Array(variableIntervals.length).fill(0);
+
+            while (true) {
+            totalCombination++;
+            const jointProbabilities = {};
+            let frequency = 1;
+
+            for (let i = 0; i < variableIntervals.length; i++) {
+                jointProbabilities[i] = variableIntervals[i][indices[i]];
+
+                const variableIndex = i;
+                const intervalValue = jointProbabilities[i];
+
+                frequency *= cumulativeFrequency[variableIndex][intervalValue];
+            }
+
+            totalFrequency += frequency;
+
+            percentageFrequency = (frequency / totalFrequency) * 100;
+
+            const row = table.insertRow();
+            for (let i = 0; i < variableIntervals.length; i++) {
+                const cell = row.insertCell();
+                cell.innerText = jointProbabilities[i];
+            }
+
+            const frequencyCell = row.insertCell();
+            frequencyCell.innerText = percentageFrequency.toFixed(2) + " %";
+
+            let incrementIndex = variableIntervals.length - 1;
+            indices[incrementIndex]++;
+
+            while (incrementIndex >= 0 && indices[incrementIndex] >= variableIntervals[incrementIndex].length) {
+                indices[incrementIndex] = 0;
+                incrementIndex--;
+
+                if (incrementIndex >= 0) {
+                indices[incrementIndex]++;
+                }
+            }
+
+            if (incrementIndex < 0) {
+                break;
+            }
+            }
+            console.log("Total Combination: " + totalCombination);
+        }
+
+        function removeExcessControls() {
+            labels.forEach(label => label.remove());
+            intervals.forEach(interval => interval.remove());
+            labels.length = 0;
+            intervals.length = 0;
+            variables.length = 0;
+        }
+
+        initialize();
+        });
+    </script>
+</body>
+</html>
