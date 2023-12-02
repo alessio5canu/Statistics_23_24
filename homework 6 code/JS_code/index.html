@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>System Attack Charts</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css" />
+  </head>
+
+  <body>
+    <h1>Homework 6 JS Charts</h1>
+    <div class="container">
+      <p>
+        <label for="M">Number of Systems (M):</label>
+        <input id="M" type="number" value="10" min="1" step="1" />
+      </p>
+      <p>
+        <label for="N">Number of Attacks (N):</label>
+        <input id="N" type="number" value="300" min="1" step="1" />
+      </p>
+      <p>
+        <label for="p">Probability of successfull attack (P): </label>
+        <input id="p" type="number" value="0.6" min="0" max="1" step="0.1" />
+      </p>
+      <p>
+        <label for="p">Security Score (S): </label>
+        <input id="S" type="number" value="20" min="20" max="100" step="10" />
+      </p>
+    </div>
+    <div>
+      <h2 id="instability_h2">
+        Instability:
+        <span id="pr"></span>
+      </h2>
+    </div>
+    <div class="resizable">
+      <div style="display: flex">
+        <div id="canvas1" class="canvasWrapper">
+          <canvas id="myCanvas"></canvas>
+        </div>
+        <div id="canvas2" class="canvasWrapper">
+          <canvas id="histogramChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const canvas1 = document.getElementById("canvas1");
+      const myCanvas = document.getElementById("myCanvas");
+      const ctx = myCanvas.getContext("2d");
+      const canvas2 = document.getElementById("canvas2");
+      const myHistogram = document.getElementById("histogramChart");
+
+      let canvasArr = [];
+
+      const destroyCanvas = function () {
+        for (let c of canvasArr) c.destroy();
+      };
+
+      // Move canvas 1
+      myCanvas.addEventListener("mousedown", () => {
+        myCanvas.addEventListener("mousemove", update1);
+        window.addEventListener("mouseup", () => {
+          myCanvas.removeEventListener("mousemove", update1);
+        });
+      });
+
+      function update1(ev) {
+        canvas1.style.setProperty("left", `${ev.x - 200}px`);
+        canvas1.style.setProperty("top", `${ev.y - 25}px`);
+      }
+
+      // Move canvas 2
+      myHistogram.addEventListener("mousedown", () => {
+        myHistogram.addEventListener("mousemove", update2);
+        window.addEventListener("mouseup", () => {
+          myHistogram.removeEventListener("mousemove", update2);
+        });
+      });
+
+      function update2(ev) {
+        canvas2.style.setProperty("left", `${ev.x - 200}px`);
+        canvas2.style.setProperty("top", `${ev.y - 25}px`);
+      }
+
+      let yAxesHistogram = [];
+      let xAxesHistogram = [];
+
+      let histogram = document
+        .getElementById("histogramChart")
+        .getContext("2d");
+
+      const N = document.getElementById("N");
+      const p = document.getElementById("p");
+      const M = document.getElementById("M");
+      const colorSystems = [];
+      let listAttacks = 0;
+
+      let S = document.getElementById("S");
+      let pr = document.getElementById("pr");
+      let discarded = 0;
+
+      let histogramData = Object.fromEntries(
+        Array.from({ length: 9 }, (_, i) => [-(i + 2) * 10, 0])
+      );
+
+      let xValues = Array.from({ length: N.value }, (_, i) => i);
+      let inputs = [N, p, M, S];
+
+      inputs.forEach((input) => {
+        input.addEventListener("input", () => {
+          ReloadAttacks();
+          ReloadAttacksFrequency();
+        });
+      });
+
+      ReloadAttacks();
+      ReloadAttacksFrequency();
+
+      function ReloadAttacks() {
+        destroyCanvas();
+        let numberAttacks = N.value;
+        let probability = p.value;
+        let numberSystems = M.value;
+
+        xValues = Array.from({ length: numberAttacks }, (_, i) => i);
+
+        listAttacks = GenerateAttacks(
+          numberAttacks,
+          probability,
+          numberSystems
+        );
+
+        pr.innerHTML = (discarded / M.value) * 100 + "%";
+
+        DrawChart(listAttacks, numberSystems, "myCanvas");
+      }
+
+      function GenerateAttacks(numberAttacks, probability, numberSystems) {
+        const allAttacks = [];
+        histogramData = Object.fromEntries(
+          Array.from({ length: 9 }, (_, i) => [-(i + 2) * 10, 0])
+        );
+        discarded = 0;
+
+        for (let j = 0; j < numberSystems; j++) {
+          const yValues = [0];
+          let sumAttacks = 0;
+          let systemChecked = false;
+          let systemSafe = false;
+          let P = [-20, -30, -40, -50, -60, -70, -80, -90, -100];
+
+          for (let i = 1; i < numberAttacks; i++) {
+            if (Math.random() > probability) {
+              sumAttacks += 1;
+            } else {
+              sumAttacks -= 1;
+            }
+
+            if (sumAttacks == S.value) {
+              systemChecked = true;
+              systemSafe = true;
+            } else if (sumAttacks == P[0]) {
+              if (!systemChecked) {
+                systemChecked = true;
+                discarded += 1;
+              } else if (systemSafe == true) {
+                break;
+              }
+              histogramData[P[0]] += 1;
+              P.shift();
+            }
+
+            yValues.push(sumAttacks);
+          }
+          allAttacks.push(yValues);
+        }
+
+        return allAttacks;
+      }
+
+      function ReloadAttacksFrequency() {
+        let numberAttacks = N.value;
+        let probability = p.value;
+        let numberSystems = M.value;
+
+        xValues = Array.from({ length: numberAttacks }, (_, i) => i);
+
+        const frequencyValue = AttacksCalculation(
+          numberAttacks,
+          probability,
+          numberSystems
+        );
+
+        const listCumulatedFrequencies = frequencyValue[0];
+
+        CalculateFrequencyHistogram();
+      }
+
+      function AttacksCalculation(numberAttacks, probability, numberSystems) {
+        const cumulated = [];
+
+        for (let j = 0; j < numberSystems; j++) {
+          const yValuesCumulated = [0];
+          let sumAttacksCumulated = 0;
+
+          for (let i = 1; i < numberAttacks; i++) {
+            if (Math.random() >= probability) {
+              sumAttacksCumulated += 1;
+            }
+            yValuesCumulated.push(sumAttacksCumulated);
+          }
+
+          cumulated.push(yValuesCumulated);
+        }
+        return [cumulated];
+      }
+
+      function DrawChart(attacks, systems, chartID) {
+        ctx.clearRect(0, 0, chartID.width, chartID.height);
+
+        const datasets = [];
+
+        //Colors of Systems
+        for (let i = 0; i < M.value; i++) {
+          const randomColor = getRandomRGBAColor();
+          colorSystems.push(randomColor);
+          i++;
+        }
+
+        for (let i = 0; i < systems; i++) {
+          datasets.push({
+            label: `System ${i + 1}`,
+            fill: false,
+            backgroundColor: colorSystems[i],
+            borderColor: colorSystems[i],
+            data: attacks[i],
+          });
+        }
+
+        const myChart = new Chart(chartID, {
+          type: "line",
+          data: {
+            labels: xValues,
+            datasets: datasets,
+            fill: false,
+          },
+          options: {
+            responsive: true,
+            elements: {
+              line: {
+                tension: 0.1,
+              },
+            },
+            legend: {
+              display: false,
+            },
+            tooltips: {
+              enabled: false,
+            },
+          },
+        });
+
+        canvasArr.push(myChart);
+      }
+
+      function getRandomRGBAColor() {
+        const r = Math.floor(Math.random() * 256); // Random red component (0-255)
+        const g = Math.floor(Math.random() * 256); // Random green component (0-255)
+        const b = Math.floor(Math.random() * 256); // Random blue component (0-255)
+        const a = Math.random(); // Random alpha component (0-1)
+
+        return `rgba(${r}, ${g}, ${b}, ${a})`;
+      }
+
+      // Get the canvas histogram element
+      CalculateFrequencyHistogram();
+      function CalculateFrequencyHistogram() {
+        xAxesHistogram = Object.values(histogramData);
+        yAxesHistogram = Object.keys(histogramData);
+        let data = {
+          labels: yAxesHistogram,
+          datasets: [
+            {
+              label: "Unsecure score",
+              data: xAxesHistogram,
+              backgroundColor: getRandomRGBAColor(),
+              borderWidth: 1,
+            },
+          ],
+        };
+
+        // Create the histogram chart
+        const horizontalHistogram = new Chart(histogram, {
+          type: "horizontalBar",
+          data: data,
+          options: {
+            indexAxis: "y",
+            scales: {
+              xAxes: [
+                {
+                  ticks: {
+                    min: 0,
+                  },
+                },
+              ],
+            },
+          },
+        });
+
+        canvasArr.push(horizontalHistogram);
+      }
+    </script>
+  </body>
+</html>
